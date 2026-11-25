@@ -40,8 +40,7 @@ function measureTopEdge(
   ctx.scale(scale, scale);
   ctx.font = font;
   if ("letterSpacing" in ctx && letterSpacing !== "normal") {
-    (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing =
-      letterSpacing;
+    (ctx as CanvasRenderingContext2D & { letterSpacing: string }).letterSpacing = letterSpacing;
   }
   ctx.textBaseline = "alphabetic";
   ctx.fillStyle = "#000";
@@ -138,10 +137,7 @@ function drawSnow(el: HTMLElement, canvas: HTMLCanvasElement): void {
     if (Number.isNaN(tops[i])) continue;
     const l = tops[Math.max(0, i - slopeSpan)];
     const r = tops[Math.min(n - 1, i + slopeSpan)];
-    const slope =
-      Number.isNaN(l) || Number.isNaN(r)
-        ? 3
-        : Math.abs(r - l) / (2 * slopeSpan * step);
+    const slope = Number.isNaN(l) || Number.isNaN(r) ? 3 : Math.abs(r - l) / (2 * slopeSpan * step);
     const flatness = 1 / (1 + slope * slope * 1.5);
     const lump = 0.85 + 0.15 * Math.sin(i * step * 0.9) * Math.sin(i * step * 0.37);
     depth[i] = thickness * (0.12 + 0.88 * flatness) * lump;
@@ -157,7 +153,8 @@ function drawSnow(el: HTMLElement, canvas: HTMLCanvasElement): void {
     let count = 0;
     for (let k = -radius; k <= radius; k++) {
       const j = i + k;
-      if (j < 0 || j >= n || Number.isNaN(tops[j]) || Math.abs(tops[j] - tops[i]) > maxDrop) continue;
+      if (j < 0 || j >= n || Number.isNaN(tops[j]) || Math.abs(tops[j] - tops[i]) > maxDrop)
+        continue;
       sum += tops[j] - depth[j];
       count++;
     }
@@ -207,8 +204,8 @@ export function startSnowLetters(options: SnowLettersOptions = {}): () => void {
   function release(el: HTMLElement): void {
     active.delete(el);
     resizeObserver?.unobserve(el);
-    const overlay = overlays.get(el)!;
-    if (--overlay.users === 0) {
+    const overlay = overlays.get(el);
+    if (overlay && --overlay.users === 0) {
       overlay.canvas.remove();
       overlays.delete(el);
     }
@@ -248,13 +245,17 @@ export function startSnowLetters(options: SnowLettersOptions = {}): () => void {
     if (!stopped && pending === undefined) pending = requestAnimationFrame(redraw);
   }
 
-  const resizeObserver = typeof ResizeObserver === "function" ? new ResizeObserver(schedule) : undefined;
+  const resizeObserver =
+    typeof ResizeObserver === "function" ? new ResizeObserver(schedule) : undefined;
   const observer = new MutationObserver((mutations) => {
-    if (mutations.some(({ target, type, addedNodes, removedNodes }) => {
-      if (internalNodes.has(target)) return false;
-      if (type !== "childList") return true;
-      return [...addedNodes, ...removedNodes].some((node) => !internalNodes.has(node));
-    })) schedule();
+    if (
+      mutations.some(({ target, type, addedNodes, removedNodes }) => {
+        if (internalNodes.has(target)) return false;
+        if (type !== "childList") return true;
+        return [...addedNodes, ...removedNodes].some((node) => !internalNodes.has(node));
+      })
+    )
+      schedule();
   });
   observer.observe(document.documentElement, {
     childList: true,

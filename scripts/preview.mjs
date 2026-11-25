@@ -18,7 +18,11 @@ createServer(async (request, response) => {
     }
 
     const path = resolve(root, pathname.slice(base.length) || "index.html");
-    if (!pathname.startsWith(base) || !path.startsWith(root + sep) || !(await stat(path)).isFile()) {
+    if (
+      !pathname.startsWith(base) ||
+      !path.startsWith(root + sep) ||
+      !(await stat(path)).isFile()
+    ) {
       response.writeHead(404).end();
       return;
     }

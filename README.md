@@ -58,6 +58,7 @@ Use Node.js 24 to match CI.
 
 ```sh
 npm ci
+npm run lint
 npx playwright install chromium firefox webkit
 npm test
 npm run test:package
@@ -65,9 +66,11 @@ npm run test:package
 
 `npm run build` compiles the library to `dist/`. Run `npm run build:site` followed by `npm run preview` to open the examples at `http://127.0.0.1:4173/snow-letters/`.
 
+Run `npm run format` to apply Biome formatting and safe lint fixes. Open pull requests against `main` and check the Validation workflow before merging.
+
 ## Release and deploy
 
-GitHub Actions validates pushes to `main` and pull requests. The Pages workflow tests the built examples and deploys them from `main` using GitHub Actions as the Pages source.
+GitHub Actions checks lint, formatting, browser behavior, and packaging on pushes to `main` and on pull requests. The Pages workflow tests the built examples and deploys them from `main` using GitHub Actions as the Pages source.
 
 1. Bump the version with `npm version <patch|minor|major> --no-git-tag-version`. Commit the manifest and lockfile, then merge the change to `main`.
 2. Publish a GitHub Release targeting that commit with a tag matching `v<version>`. Include release notes. For prereleases, use a prerelease version in the manifest and mark the GitHub Release as a prerelease.

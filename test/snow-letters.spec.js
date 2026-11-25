@@ -3,16 +3,18 @@ import { expect, test } from "@playwright/test";
 const overlay = ".snow-letters-canvas";
 
 async function fixture(page) {
-  await page.route("**/fixture.html", (route) => route.fulfill({
-    contentType: "text/html; charset=utf-8",
-    body: `<!doctype html>
+  await page.route("**/fixture.html", (route) =>
+    route.fulfill({
+      contentType: "text/html; charset=utf-8",
+      body: `<!doctype html>
       <style>
         .snow-letters, .custom { position: relative; font: bold 72px Arial, sans-serif; }
         .snow-letters { border: 6px solid transparent; text-align: center; }
       </style>
       <h1 class="snow-letters">H   H</h1>
       <h2 class="custom">Fresh snow</h2>`,
-  }));
+    }),
+  );
   await page.goto("./fixture.html");
   await page.evaluate(async () => {
     await document.fonts.ready;
@@ -38,9 +40,13 @@ async function alphaCount(locator) {
   });
 }
 
-test("paints aligned, accessible snow at the device pixel ratio and settles when idle", async ({ page }) => {
+test("paints aligned, accessible snow at the device pixel ratio and settles when idle", async ({
+  page,
+}) => {
   await fixture(page);
-  await page.evaluate(() => { window.stop = window.startSnowLetters(); });
+  await page.evaluate(() => {
+    window.stop = window.startSnowLetters();
+  });
   const canvas = page.locator(`h1 > ${overlay}`);
   await expect(canvas).toHaveAttribute("aria-hidden", "true");
   await expect(canvas).toHaveCSS("pointer-events", "none");
@@ -69,7 +75,12 @@ test("paints aligned, accessible snow at the device pixel ratio and settles when
       insideText: pixels.every((x) => x >= text.left - 1 && x <= text.right + 1),
     };
   });
-  expect(result).toEqual({ scaleMatches: true, paintsBothLetters: true, leavesGap: true, insideText: true });
+  expect(result).toEqual({
+    scaleMatches: true,
+    paintsBothLetters: true,
+    leavesGap: true,
+    insideText: true,
+  });
 
   const drawsWhileIdle = await page.evaluate(async () => {
     const frame = () => new Promise((resolve) => requestAnimationFrame(resolve));
@@ -83,7 +94,9 @@ test("paints aligned, accessible snow at the device pixel ratio and settles when
 
 test("refreshes for text, custom thickness, resize, and font loads", async ({ page }) => {
   await fixture(page);
-  await page.evaluate(() => { window.stop = window.startSnowLetters(); });
+  await page.evaluate(() => {
+    window.stop = window.startSnowLetters();
+  });
   const heading = page.locator("h1");
   const canvas = heading.locator(overlay);
   await expect(canvas).toHaveCount(1);
@@ -97,15 +110,21 @@ test("refreshes for text, custom thickness, resize, and font loads", async ({ pa
   await heading.evaluate((el) => el.style.removeProperty("--snow-thickness"));
   await expect(canvas).toHaveCount(1);
 
-  await heading.evaluate((el) => { el.firstChild.data = ""; });
+  await heading.evaluate((el) => {
+    el.firstChild.data = "";
+  });
   await expect(canvas).toHaveCount(0);
-  await heading.evaluate((el) => { el.firstChild.data = "W"; });
+  await heading.evaluate((el) => {
+    el.firstChild.data = "W";
+  });
   await expect(canvas).toHaveCount(1);
   expect(await alphaCount(canvas)).toBeLessThan(initialPixels);
 
   const beforeResize = await canvas.evaluate((el) => el.getBoundingClientRect().left);
   await page.setViewportSize({ width: 900, height: 700 });
-  await expect.poll(() => canvas.evaluate((el) => el.getBoundingClientRect().left)).toBeLessThan(beforeResize);
+  await expect
+    .poll(() => canvas.evaluate((el) => el.getBoundingClientRect().left))
+    .toBeLessThan(beforeResize);
   const beforeFontLoad = await page.evaluate(() => {
     document.fonts.dispatchEvent(new Event("loadingdone"));
     return window.draws;
@@ -113,14 +132,19 @@ test("refreshes for text, custom thickness, resize, and font loads", async ({ pa
   await expect.poll(() => page.evaluate(() => window.draws)).toBeGreaterThan(beforeFontLoad);
 });
 
-test("tracks selector changes and cleans up independent and overlapping subscriptions", async ({ page }) => {
+test("tracks selector changes and cleans up independent and overlapping subscriptions", async ({
+  page,
+}) => {
   await fixture(page);
   await page.evaluate(() => {
     window.stop = window.startSnowLetters();
     window.stopCustom = window.startSnowLetters({ selector: ".custom, h1" });
   });
   await expect(page.locator(overlay)).toHaveCount(2);
-  await page.evaluate(() => { window.stop(); window.stop(); });
+  await page.evaluate(() => {
+    window.stop();
+    window.stop();
+  });
   await expect(page.locator(overlay)).toHaveCount(2);
 
   const late = page.locator("#late");
@@ -131,9 +155,13 @@ test("tracks selector changes and cleans up independent and overlapping subscrip
     document.body.append(el);
   });
   await expect(late.locator(overlay)).toHaveCount(0);
-  await late.evaluate((el) => { el.className = "custom"; });
+  await late.evaluate((el) => {
+    el.className = "custom";
+  });
   await expect(late.locator(overlay)).toHaveCount(1);
-  await late.evaluate((el) => { el.className = ""; });
+  await late.evaluate((el) => {
+    el.className = "";
+  });
   await expect(late.locator(overlay)).toHaveCount(0);
 
   await page.evaluate(() => {
@@ -142,7 +170,9 @@ test("tracks selector changes and cleans up independent and overlapping subscrip
     cancelImmediately();
     window.dispatchEvent(new Event("resize"));
   });
-  await page.evaluate(() => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))));
+  await page.evaluate(
+    () => new Promise((resolve) => requestAnimationFrame(() => requestAnimationFrame(resolve))),
+  );
   await expect(page.locator(overlay)).toHaveCount(0);
 });
 
@@ -169,7 +199,9 @@ test("playground controls update visible snow and fit a mobile viewport", async 
   await expect(canvas).toHaveCount(0);
   await page.getByLabel("Snow on").check();
   await expect(canvas).toHaveCount(1);
-  const hasOverflow = await page.evaluate(() => document.documentElement.scrollWidth > window.innerWidth);
+  const hasOverflow = await page.evaluate(
+    () => document.documentElement.scrollWidth > window.innerWidth,
+  );
   expect(hasOverflow).toBe(false);
   expect(errors).toEqual([]);
 });
