@@ -70,7 +70,9 @@ Run `npm run format` to apply Biome formatting and safe lint fixes. Open pull re
 
 ### Dependency updates
 
-Renovate runs twice daily on GitHub Actions. You can also start it from the Actions tab. Its Dependency Dashboard tracks delayed updates and pending PRs.
+Renovate runs Mondays at 02:17 UTC on GitHub Actions. You can also start it from the Actions tab. Its Dependency Dashboard tracks delayed updates and pending PRs.
+
+Renovate updates `package.json` and `package-lock.json` together when a direct npm dependency version changes. Weekly lockfile maintenance refreshes resolved versions of transitive dependencies.
 
 Routine npm updates wait at least seven days after publication. npm applies the same cooldown when resolving the lockfile, including transitive dependencies. Security advisories can open a PR immediately for review. Its lockfile still follows the npm cooldown.
 
