@@ -4,13 +4,15 @@ on:
   schedule:
     # Run during Renovate's weekly lockfile maintenance window.
     - cron: '17 2 * * 1'
+  push:
+    branches: [main]
   workflow_dispatch:
 
 permissions: {}
 
 concurrency:
   group: renovate
-  cancel-in-progress: false
+  queue: max
 
 jobs:
   renovate:
@@ -33,6 +35,8 @@ jobs:
           token: ${{ steps.token.outputs.token }}
         env:
           RENOVATE_REPOSITORIES: ${{ github.repository }}
+          # Refresh existing Renovate branches on main pushes. Open new updates on full runs.
+          RENOVATE_MODE: ${{ github.event_name == 'push' && 'silent' || 'full' }}
           RENOVATE_ONBOARDING: 'false'
           RENOVATE_REQUIRE_CONFIG: required
           RENOVATE_PLATFORM_COMMIT: enabled
