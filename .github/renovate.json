@@ -47,6 +47,14 @@
       "matchManagers": ["npm"],
       "matchUpdateTypes": ["pin"],
       "minimumReleaseAgeBehaviour": "timestamp-optional"
+    },
+    {
+      "description": "Automerge pinned patch updates to the Renovate action after required checks pass",
+      "matchManagers": ["github-actions"],
+      "matchPackageNames": ["renovatebot/github-action"],
+      "matchUpdateTypes": ["patch"],
+      "matchJsonata": ["$exists(currentDigest)"],
+      "automerge": true
     }
   ],
   "customManagers": [

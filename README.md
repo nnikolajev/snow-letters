@@ -70,13 +70,15 @@ Run `npm run format` to apply Biome formatting and safe lint fixes. Open pull re
 
 ### Dependency updates
 
-Renovate runs Mondays at 02:17 UTC on GitHub Actions. You can also start it from the Actions tab. Its Dependency Dashboard tracks delayed updates and pending PRs.
+Renovate opens dependency PRs Mondays at 02:17 UTC. You can also trigger a full run from the Actions tab. Its Dependency Dashboard tracks delayed updates and pending PRs.
+
+When `main` advances, Renovate rebases its open PRs onto the latest `main`. GitHub reruns the required checks on each rebased PR and merges eligible PRs after both checks pass.
 
 Renovate updates `package.json` and `package-lock.json` together when a direct npm dependency version changes. Weekly lockfile maintenance refreshes resolved versions of transitive dependencies.
 
 Routine npm updates wait at least seven days after publication. npm applies the same cooldown when resolving the lockfile, including transitive dependencies. Security advisories can open a PR immediately for review. Its lockfile still follows the npm cooldown.
 
-Routine npm minor, patch, and pin updates for stable dependencies and scheduled lockfile maintenance can merge automatically once Validation and Dependency review pass. Major, pre-1.0, GitHub Actions, Renovate runner, and security updates require a maintainer to merge them. Dependency review blocks newly introduced known vulnerabilities rated moderate or higher.
+Routine npm minor, patch, and pin updates for stable dependencies, scheduled lockfile maintenance, and pinned patch updates to the Renovate action can merge automatically once Validation and Dependency review pass. Major, pre-1.0, other GitHub Actions, Renovate runner, and security updates require a maintainer to merge them. Dependency review blocks newly introduced known vulnerabilities rated moderate or higher.
 
 The Renovate workflow uses a dedicated GitHub App installed only on this repository. Its app ID and private key are stored as `RENOVATE_APP_ID` and `RENOVATE_APP_PRIVATE_KEY` in the `renovate` Actions environment, restricted to `main`.
 
