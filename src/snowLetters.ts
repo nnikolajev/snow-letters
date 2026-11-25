@@ -14,6 +14,8 @@ export interface SnowLettersOptions {
 }
 
 const CANVAS_CLASS = "snow-letters-canvas";
+const internalNodes = new WeakSet<Node>();
+const overlays = new WeakMap<HTMLElement, { canvas: HTMLCanvasElement; users: number }>();
 
 function readFont(cs: CSSStyleDeclaration): string {
   return `${cs.fontStyle} ${cs.fontWeight} ${cs.fontSize} ${cs.fontFamily}`;
@@ -60,68 +62,72 @@ function measureTopEdge(
   return tops;
 }
 
-function drawSnow(el: HTMLElement): void {
+function drawSnow(el: HTMLElement, canvas: HTMLCanvasElement): void {
   const textNode = Array.from(el.childNodes).find(
-    (n) => n.nodeType === Node.TEXT_NODE && n.textContent?.trim(),
+    (node): node is Text => node.nodeType === Node.TEXT_NODE && Boolean(node.textContent?.trim()),
   );
-  if (!textNode) return;
+  if (!textNode) {
+    canvas.remove();
+    return;
+  }
 
   const cs = getComputedStyle(el);
   const fontSize = parseFloat(cs.fontSize);
-  const thicknessFactor =
-    parseFloat(cs.getPropertyValue("--snow-thickness")) || 0.16;
+  const value = parseFloat(cs.getPropertyValue("--snow-thickness"));
+  const thicknessFactor = Number.isFinite(value) && value >= 0 ? value : 0.16;
   const thickness = fontSize * thicknessFactor;
 
   const elRect = el.getBoundingClientRect();
   const range = document.createRange();
   range.selectNodeContents(textNode);
   const textRect = range.getBoundingClientRect();
+  const textRects = Array.from(range.getClientRects());
+  if (!thickness || !textRect.width || textRects.some((rect) => rect.top !== textRects[0].top)) {
+    canvas.remove();
+    return;
+  }
+
+  const preservesSpaces = ["pre", "pre-wrap", "break-spaces"].includes(cs.whiteSpace);
+  const text = preservesSpaces ? textNode.data : textNode.data.replace(/[ \t\r\n\f]+/g, " ").trim();
 
   // Baseline position: zero-size inline-block aligned to the baseline.
   const probe = document.createElement("span");
   probe.style.cssText =
-    "display:inline-block;width:0;height:0;vertical-align:baseline;";
-  el.appendChild(probe);
-  const baselineY = probe.getBoundingClientRect().top - elRect.top;
+    "all:initial;display:inline-block;width:0;height:0;vertical-align:baseline;";
+  internalNodes.add(probe);
+  textNode.after(probe);
+  const baselineY = probe.getBoundingClientRect().top - textRect.top;
   probe.remove();
 
-  // Extra room above the text for the snow pile.
-  const pad = Math.ceil(thickness * 1.5);
-  const width = Math.ceil(elRect.width) + pad * 2;
-  const height = Math.ceil(elRect.height) + pad;
+  // Limit the scan to the text and leave room for the pile and glyph overhang.
+  const pad = Math.ceil(Math.max(thickness * 1.5, fontSize * 0.3));
+  const width = Math.ceil(textRect.width) + pad * 2;
+  const height = Math.ceil(textRect.height) + pad * 2;
   const scale = window.devicePixelRatio || 1;
-  const textX = textRect.left - elRect.left + pad;
 
   const tops = measureTopEdge(
-    textNode.textContent!,
+    text,
     readFont(cs),
     cs.letterSpacing,
     width,
     height,
-    textX,
+    pad,
     baselineY + pad,
     scale,
   );
-  if (!tops.length) return;
-
-  let canvas = el.querySelector<HTMLCanvasElement>(`:scope > .${CANVAS_CLASS}`);
-  if (!canvas) {
-    canvas = document.createElement("canvas");
-    canvas.className = CANVAS_CLASS;
-    canvas.setAttribute("aria-hidden", "true");
-    el.appendChild(canvas);
+  if (!tops.length) {
+    canvas.remove();
+    return;
   }
   canvas.width = Math.ceil(width * scale);
   canvas.height = Math.ceil(height * scale);
   canvas.style.width = `${width}px`;
   canvas.style.height = `${height}px`;
-  canvas.style.left = `${-pad}px`;
-  canvas.style.top = `${-pad}px`;
+  canvas.style.left = `${textRect.left - elRect.left - parseFloat(cs.borderLeftWidth) - pad}px`;
+  canvas.style.top = `${textRect.top - elRect.top - parseFloat(cs.borderTopWidth) - pad}px`;
 
   const ctx = canvas.getContext("2d");
   if (!ctx) return;
-  ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.clearRect(0, 0, canvas.width, canvas.height);
 
   // Snow depth per column: less on steep edges (snow slides off), with lumps.
   const n = tops.length;
@@ -138,19 +144,20 @@ function drawSnow(el: HTMLElement): void {
         : Math.abs(r - l) / (2 * slopeSpan * step);
     const flatness = 1 / (1 + slope * slope * 1.5);
     const lump = 0.85 + 0.15 * Math.sin(i * step * 0.9) * Math.sin(i * step * 0.37);
-    depth[i] = thickness * (0.25 + 0.75 * flatness) * lump;
+    depth[i] = thickness * (0.12 + 0.88 * flatness) * lump;
   }
 
   // Smooth the snow surface so it looks soft instead of pixel-stepped.
   const surface: number[] = Array.from({ length: n }, () => NaN);
   const radius = Math.max(1, Math.round(scale * 1.5));
+  const maxDrop = Math.max(2, thickness * 0.45);
   for (let i = 0; i < n; i++) {
     if (Number.isNaN(tops[i])) continue;
     let sum = 0;
     let count = 0;
     for (let k = -radius; k <= radius; k++) {
       const j = i + k;
-      if (j < 0 || j >= n || Number.isNaN(tops[j])) continue;
+      if (j < 0 || j >= n || Number.isNaN(tops[j]) || Math.abs(tops[j] - tops[i]) > maxDrop) continue;
       sum += tops[j] - depth[j];
       count++;
     }
@@ -164,15 +171,15 @@ function drawSnow(el: HTMLElement): void {
   ctx.shadowBlur = 1.5;
   ctx.shadowOffsetY = 0.5;
 
-  // One filled shape per continuous run of columns that contain ink.
+  // Start a new pile at gaps and sharp drops so snow follows each ledge.
   let i = 0;
   while (i < n) {
     if (Number.isNaN(tops[i])) {
       i++;
       continue;
     }
-    const start = i;
-    while (i < n && !Number.isNaN(tops[i])) i++;
+    const start = i++;
+    while (i < n && Math.abs(tops[i] - tops[i - 1]) <= maxDrop) i++;
     const end = i - 1;
 
     ctx.beginPath();
@@ -185,64 +192,90 @@ function drawSnow(el: HTMLElement): void {
     ctx.closePath();
     ctx.fill();
   }
+
+  if (canvas.parentNode !== el) el.appendChild(canvas);
 }
 
 /** Keeps snow drawn on all matching elements. Returns cleanup. */
 export function startSnowLetters(options: SnowLettersOptions = {}): () => void {
-  const SELECTOR = options.selector ?? ".snow-letters";
-  const style = document.createElement("style");
-  style.textContent = `
-.${CANVAS_CLASS} {
-  position: absolute;
-  pointer-events: none;
-  z-index: 1;
-}`;
-  document.head.appendChild(style);
+  const selector = options.selector ?? ".snow-letters";
+  document.querySelector(selector); // Validate before registering observers.
+  const active = new Set<HTMLElement>();
+  let stopped = false;
+  let pending: number | undefined;
 
-  let pending = 0;
-  const redrawAll = () => {
-    cancelAnimationFrame(pending);
-    pending = requestAnimationFrame(() => {
-      document.querySelectorAll<HTMLElement>(SELECTOR).forEach(drawSnow);
-    });
-  };
+  function release(el: HTMLElement): void {
+    active.delete(el);
+    resizeObserver?.unobserve(el);
+    const overlay = overlays.get(el)!;
+    if (--overlay.users === 0) {
+      overlay.canvas.remove();
+      overlays.delete(el);
+    }
+  }
 
-  // Redraw when new logos appear (client-side navigation) or text changes.
-  const observer = new MutationObserver((mutations) => {
-    const relevant = mutations.some((m) => {
-      const target = m.target as Element;
-      if (target instanceof HTMLCanvasElement) return false;
-      const added = Array.from(m.addedNodes);
-      if (added.length && added.every((a) => a instanceof HTMLCanvasElement)) {
-        return false;
+  function redraw(): void {
+    pending = undefined;
+    const matches = new Set(
+      Array.from(document.querySelectorAll(selector)).filter(
+        (el): el is HTMLElement => el instanceof HTMLElement && !internalNodes.has(el),
+      ),
+    );
+    for (const el of active) {
+      if (!matches.has(el)) release(el);
+    }
+    for (const el of matches) {
+      let overlay = overlays.get(el);
+      if (!overlay) {
+        const canvas = document.createElement("canvas");
+        canvas.className = CANVAS_CLASS;
+        canvas.setAttribute("aria-hidden", "true");
+        canvas.style.cssText = "position:absolute;pointer-events:none;z-index:1;";
+        internalNodes.add(canvas);
+        overlay = { canvas, users: 0 };
+        overlays.set(el, overlay);
       }
-      return (
-        added.some(
-          (a) =>
-            a instanceof Element &&
-            (a.matches(SELECTOR) || a.querySelector(SELECTOR)),
-        ) ||
-        Boolean(target.closest?.(SELECTOR)) ||
-        (m.type === "characterData" && Boolean(target.parentElement?.closest(SELECTOR)))
-      );
-    });
-    if (relevant) redrawAll();
+      if (!active.has(el)) {
+        active.add(el);
+        overlay.users++;
+        resizeObserver?.observe(el);
+      }
+      drawSnow(el, overlay.canvas);
+    }
+  }
+
+  function schedule(): void {
+    if (!stopped && pending === undefined) pending = requestAnimationFrame(redraw);
+  }
+
+  const resizeObserver = typeof ResizeObserver === "function" ? new ResizeObserver(schedule) : undefined;
+  const observer = new MutationObserver((mutations) => {
+    if (mutations.some(({ target, type, addedNodes, removedNodes }) => {
+      if (internalNodes.has(target)) return false;
+      if (type !== "childList") return true;
+      return [...addedNodes, ...removedNodes].some((node) => !internalNodes.has(node));
+    })) schedule();
   });
-  observer.observe(document.body, {
+  observer.observe(document.documentElement, {
     childList: true,
     subtree: true,
     characterData: true,
+    attributes: true,
   });
 
-  window.addEventListener("resize", redrawAll);
-  void document.fonts?.ready.then(redrawAll);
-  redrawAll();
+  window.addEventListener("resize", schedule);
+  document.fonts?.addEventListener("loadingdone", schedule);
+  void document.fonts?.ready.then(schedule);
+  schedule();
 
   return () => {
-    cancelAnimationFrame(pending);
+    if (stopped) return;
+    stopped = true;
+    if (pending !== undefined) cancelAnimationFrame(pending);
     observer.disconnect();
-    window.removeEventListener("resize", redrawAll);
-    document.querySelectorAll(`.${CANVAS_CLASS}`).forEach((c) => c.remove());
-    style.remove();
+    for (const el of active) release(el);
+    resizeObserver?.disconnect();
+    window.removeEventListener("resize", schedule);
+    document.fonts?.removeEventListener("loadingdone", schedule);
   };
 }

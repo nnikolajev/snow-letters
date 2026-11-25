@@ -1,39 +1,28 @@
-# snow-letters
+# Snow Letters
 
-Puts snow on top of text. The snow follows the real shape of each letter:
-flat tops get a thick layer, curves get a thinner one, and steep edges stay
-almost bare, as if the snow slid off.
+Draw a soft layer of snow on real text. Snow settles more thickly on flat glyph tops and thins out over steep edges. The effect uses a decorative canvas while the text stays selectable and accessible.
 
-- Plain JavaScript, works with any framework or none.
-- No dependencies.
-- Keeps the snow in place when the page resizes, fonts load, or the text
-  changes.
-- Adds snow to matching elements that appear later.
+[Interactive playground](https://nnikolajev.github.io/snow-letters/) · [Usage guide](https://nnikolajev.github.io/snow-letters/guide.html) · [npm](https://www.npmjs.com/package/snow-letters)
 
-## How it works
-
-For each element, the text is drawn to an offscreen canvas with the same font
-and spacing. The library finds the top edge of the letters in every pixel
-column, then draws a soft, slightly uneven snow layer along that edge on a
-canvas placed over the text. The text itself is not changed, so it stays
-selectable and readable by screen readers.
-
-## Installation
+## Install
 
 ```sh
 npm install snow-letters
 ```
 
-## Usage
+## Use
+
+Put a single line of plain text directly inside a positioned HTML element. Give the element room above its text and keep overflow visible wherever the snow extends.
 
 ```html
-<h1 class="snow-letters">Happy holidays</h1>
-```
+<h1 class="snow-letters">Winter Sale</h1>
 
-```css
-.snow-letters {
-  position: relative;
-}
+<style>
+  .snow-letters {
+    position: relative;
+    --snow-thickness: 0.2;
+  }
+</style>
 ```
 
 ```js
@@ -41,48 +30,51 @@ import { startSnowLetters } from "snow-letters";
 
 const stop = startSnowLetters();
 
-// Later, to remove the snow:
-stop();
+// Call stop() when removing the effect or unmounting the view.
 ```
 
-The element must contain the text directly, as a text node. It must also be
-positioned (for example `position: relative`), because the snow canvas is
-placed absolutely inside it.
+Call `startSnowLetters` in the browser. The npm package provides an ES module and TypeScript declarations, with no runtime dependencies.
 
 ## API
 
-### `startSnowLetters(options?)`
+`startSnowLetters(options?)` watches elements matching a CSS selector and returns an idempotent cleanup function. It redraws when matching text changes, new matching elements appear, fonts load, or elements resize.
 
-Starts drawing snow on all elements that match the selector. Returns a
-function that stops the library and removes all snow.
+| Option | Type | Default | Effect |
+| --- | --- | --- | --- |
+| `selector` | `string` | `".snow-letters"` | CSS selector for HTML elements. |
+| `--snow-thickness` | CSS custom property | `0.16` | Snow depth as a fraction of the font size. Use `0` to hide snow on that element. |
 
-| Option     | Type     | Default           | Description                          |
-| ---------- | -------- | ----------------- | ------------------------------------ |
-| `selector` | `string` | `".snow-letters"` | CSS selector of the elements to use. |
-
-## Styling
-
-Set the snow thickness per element with the `--snow-thickness` CSS custom
-property. The value is a fraction of the font size. The default is `0.16`.
-
-```css
-.title {
-  --snow-thickness: 0.2;
-}
+```js
+const stop = startSnowLetters({ selector: "[data-winter]" });
 ```
 
-The snow canvas has the class `snow-letters-canvas`. It does not react to the
-mouse, so links and buttons under it keep working.
+The overlay has class `snow-letters-canvas`. It is hidden from assistive technology and allows clicks and pointer events to reach the underlying element.
 
-## Browser support
+The effect is designed for single-line headings with text directly inside the element and normal inline text flow. Modern Chromium, Firefox, and WebKit are covered by browser tests.
 
-Any browser that supports the canvas 2D API and `MutationObserver`.
+## Develop
 
-## Building
+Use Node.js 24 to match CI.
 
 ```sh
-npm install
-npm run build
+npm ci
+npx playwright install chromium firefox webkit
+npm test
+npm run test:package
 ```
 
-The compiled files are written to `dist/`.
+`npm run build` compiles the library to `dist/`. Run `npm run build:site` followed by `npm run preview` to open the examples at `http://127.0.0.1:4173/snow-letters/`.
+
+## Release and deploy
+
+GitHub Actions validates pushes to `main` and pull requests. The Pages workflow tests the built examples and deploys them from `main` using GitHub Actions as the Pages source.
+
+1. Bump the version with `npm version <patch|minor|major> --no-git-tag-version`. Commit the manifest and lockfile, then merge the change to `main`.
+2. Publish a GitHub Release targeting that commit with a tag matching `v<version>`. Include release notes. For prereleases, use a prerelease version in the manifest and mark the GitHub Release as a prerelease.
+3. The release workflow validates the tagged source and publishes its verified tarball to npm. Stable releases use `latest`. Prereleases use `next`.
+
+The npm [trusted publisher](https://docs.npmjs.com/trusted-publishers/) is configured for GitHub repository `nnikolajev/snow-letters`, workflow `release.yml`, and environment `npm`, with permission to publish. If recreating the configuration on a fresh package, first create the package on npm, then add this connection and complete a workflow publish within two days. The workflow uses GitHub OIDC for authentication and npm provenance.
+
+## License
+
+[MIT](LICENSE)

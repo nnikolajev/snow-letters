@@ -1,0 +1,105 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Install snow-letters, adjust snow thickness, and apply it to dynamically added text.">
+    <title>Snow Letters — Usage guide</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./guide.js"></script>
+  </head>
+  <body>
+    <header class="site-header shell">
+      <a class="brand" href="./">Snow Letters</a>
+      <nav aria-label="Main navigation">
+        <a href="./">Playground</a>
+        <a href="./guide.html" aria-current="page">Guide</a>
+        <a href="https://github.com/nnikolajev/snow-letters">GitHub <span aria-hidden="true">↗</span></a>
+      </nav>
+    </header>
+
+    <main class="shell guide">
+      <header class="intro">
+        <h1>Usage guide</h1>
+        <p>Install the package, mark a heading, and start the effect.</p>
+      </header>
+
+      <section class="guide-section" aria-labelledby="quick-start">
+        <div>
+          <h2 id="quick-start">Quick start</h2>
+          <p>Put the text directly inside a positioned element. Keep it on one line and leave overflow visible so the snow can extend above the glyphs.</p>
+        </div>
+        <div class="code-stack">
+          <pre><code>npm install snow-letters</code></pre>
+          <pre><code>&lt;h1 class="snow-letters"&gt;Winter Sale&lt;/h1&gt;
+
+&lt;style&gt;
+  .snow-letters { position: relative; }
+&lt;/style&gt;</code></pre>
+          <pre><code>import { startSnowLetters } from 'snow-letters';
+
+const stop = startSnowLetters();</code></pre>
+        </div>
+      </section>
+
+      <section class="guide-section" aria-labelledby="styling">
+        <div>
+          <h2 id="styling">Change the thickness</h2>
+          <p><code>--snow-thickness</code> sets depth as a fraction of the font size. It defaults to <code>0.16</code>. Use <code>0</code> to hide snow on one element.</p>
+        </div>
+        <div class="sample-grid">
+          <div class="sample">
+            <p class="sample-type snow-letters" style="--snow-thickness: 0.08">Frost</p>
+            <code>0.08</code>
+          </div>
+          <div class="sample">
+            <p class="sample-type snow-letters" style="--snow-thickness: 0.24">Drift</p>
+            <code>0.24</code>
+          </div>
+        </div>
+      </section>
+
+      <section class="guide-section" aria-labelledby="dynamic">
+        <div>
+          <h2 id="dynamic">Add snow to new text</h2>
+          <p>Pass a CSS selector to watch different elements. Matching elements pick up snow when they appear. Call <code>stop()</code> before unmounting your view or disabling the effect.</p>
+          <pre><code>const stop = startSnowLetters({
+  selector: '[data-winter]'
+});</code></pre>
+        </div>
+        <div class="dynamic-example">
+          <div class="dynamic-stage" id="dynamic-stage">
+            <p class="sample-type" data-winter>Ice Rink</p>
+          </div>
+          <div class="button-row">
+            <button type="button" id="add-example">Add heading</button>
+            <button type="button" id="toggle-example">Stop snow</button>
+          </div>
+        </div>
+      </section>
+
+      <section class="guide-section" aria-labelledby="api">
+        <div><h2 id="api">API</h2></div>
+        <dl class="api-list">
+          <div>
+            <dt><code>startSnowLetters(options?)</code></dt>
+            <dd>Starts the effect and returns a cleanup function.</dd>
+          </div>
+          <div>
+            <dt><code>options.selector</code></dt>
+            <dd>A CSS selector. Defaults to <code>.snow-letters</code>.</dd>
+          </div>
+          <div>
+            <dt><code>--snow-thickness</code></dt>
+            <dd>A nonnegative number, applied per element.</dd>
+          </div>
+        </dl>
+      </section>
+    </main>
+
+    <footer class="site-footer shell">
+      <span>Snow Letters</span>
+      <a href="https://www.npmjs.com/package/snow-letters">npm package <span aria-hidden="true">↗</span></a>
+    </footer>
+  </body>
+</html>

@@ -2,6 +2,15 @@
   "name": "snow-letters",
   "version": "1.0.0",
   "description": "Draws snow on top of text that follows the real outline of each letter.",
+  "license": "MIT",
+  "homepage": "https://nnikolajev.github.io/snow-letters/",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/nnikolajev/snow-letters.git"
+  },
+  "bugs": {
+    "url": "https://github.com/nnikolajev/snow-letters/issues"
+  },
   "keywords": [
     "snow",
     "text",
@@ -23,11 +32,20 @@
     "dist"
   ],
   "sideEffects": false,
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org/"
+  },
   "scripts": {
     "build": "tsc -p tsconfig.json",
-    "prepublishOnly": "npm run build"
+    "build:site": "npm run build && node scripts/build-site.mjs",
+    "preview": "node scripts/preview.mjs",
+    "test": "npm run build:site && playwright test",
+    "test:package": "node scripts/check-package.mjs",
+    "prepack": "npm run build"
   },
   "devDependencies": {
+    "@playwright/test": "1.65.1",
     "typescript": "^5.9.0"
   }
 }

@@ -1,0 +1,64 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="description" content="Try snow-letters, a JavaScript library that dusts the outline of real text with snow.">
+    <title>Snow Letters — Interactive demo</title>
+    <link rel="stylesheet" href="./styles.css">
+    <script type="module" src="./playground.js"></script>
+  </head>
+  <body>
+    <header class="site-header shell">
+      <a class="brand" href="./">Snow Letters</a>
+      <nav aria-label="Main navigation">
+        <a href="./" aria-current="page">Playground</a>
+        <a href="./guide.html">Guide</a>
+        <a href="https://github.com/nnikolajev/snow-letters">GitHub <span aria-hidden="true">↗</span></a>
+      </nav>
+    </header>
+
+    <main class="shell">
+      <section class="intro">
+        <h1>Snow for your type.</h1>
+        <p>A tiny JavaScript library that lets snow settle on the shape of real letters. Try it on your own text.</p>
+      </section>
+
+      <section class="playground" aria-label="Interactive snow preview">
+        <div class="specimen-stage">
+          <p id="specimen" class="specimen snow-letters">Snow Day</p>
+        </div>
+        <div class="controls">
+          <label class="field" for="preview-text">Text
+            <input id="preview-text" type="text" value="Snow Day" maxlength="18" spellcheck="false">
+          </label>
+          <label class="field" for="preview-font">Typeface
+            <select id="preview-font">
+              <option value="serif">Serif</option>
+              <option value="sans">Sans serif</option>
+              <option value="mono">Monospace</option>
+            </select>
+          </label>
+          <label class="field" for="preview-thickness">
+            <span class="range-label">Thickness <output id="thickness-value" for="preview-thickness">16%</output></span>
+            <input id="preview-thickness" type="range" min="0" max="32" value="16">
+          </label>
+          <label class="snow-toggle" for="preview-enabled">
+            <input id="preview-enabled" type="checkbox" checked>
+            Snow on
+          </label>
+        </div>
+      </section>
+
+      <div class="install-strip">
+        <code>npm install snow-letters</code>
+        <a class="button-link" href="./guide.html">Read the guide <span aria-hidden="true">→</span></a>
+      </div>
+    </main>
+
+    <footer class="site-footer shell">
+      <span>Snow Letters</span>
+      <a href="https://www.npmjs.com/package/snow-letters">npm package <span aria-hidden="true">↗</span></a>
+    </footer>
+  </body>
+</html>
