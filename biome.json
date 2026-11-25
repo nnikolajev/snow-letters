@@ -11,6 +11,7 @@
       "site/**",
       "scripts/**",
       "test/**",
+      ".github/renovate.json",
       "playwright.config.js",
       "package.json",
       "tsconfig.json",

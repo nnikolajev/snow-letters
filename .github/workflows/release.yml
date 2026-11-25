@@ -32,7 +32,7 @@ jobs:
         with:
           node-version: '24'
           package-manager-cache: false
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - name: Package the release
         id: pack
         env:

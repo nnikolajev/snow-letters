@@ -24,7 +24,7 @@ jobs:
         with:
           node-version: '24'
           package-manager-cache: false
-      - run: npm ci
+      - run: npm ci --ignore-scripts
       - run: npx playwright install --with-deps chromium
       - run: npm test -- --project=chromium
       - uses: actions/upload-pages-artifact@fc324d3547104276b827a68afc52ff2a11cc49c9 # v5.0.0

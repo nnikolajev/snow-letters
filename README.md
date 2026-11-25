@@ -54,7 +54,7 @@ The effect is designed for single-line headings with text directly inside the el
 
 ## Develop
 
-Use Node.js 24 to match CI.
+Use Node.js 24 and npm 11.10 or later to match CI and enforce the dependency cooldown.
 
 ```sh
 npm ci
@@ -67,6 +67,16 @@ npm run test:package
 `npm run build` compiles the library to `dist/`. Run `npm run build:site` followed by `npm run preview` to open the examples at `http://127.0.0.1:4173/snow-letters/`.
 
 Run `npm run format` to apply Biome formatting and safe lint fixes. Open pull requests against `main` and check the Validation workflow before merging.
+
+### Dependency updates
+
+Renovate runs twice daily on GitHub Actions. You can also start it from the Actions tab. Its Dependency Dashboard tracks delayed updates and pending PRs.
+
+Routine npm updates wait at least seven days after publication. npm applies the same cooldown when resolving the lockfile, including transitive dependencies. Security advisories can open a PR immediately for review. Its lockfile still follows the npm cooldown.
+
+Routine npm minor, patch, and pin updates for stable dependencies and scheduled lockfile maintenance can merge automatically once Validation and Dependency review pass. Major, pre-1.0, GitHub Actions, Renovate runner, and security updates require a maintainer to merge them. Dependency review blocks newly introduced known vulnerabilities rated moderate or higher.
+
+The Renovate workflow uses a dedicated GitHub App installed only on this repository. Its app ID and private key are stored as `RENOVATE_APP_ID` and `RENOVATE_APP_PRIVATE_KEY` in the `renovate` Actions environment, restricted to `main`.
 
 ## Release and deploy
 
