@@ -24,6 +24,12 @@
   },
   "packageRules": [
     {
+      "description": "Update declared runtime dependency ranges together with the lockfile",
+      "matchManagers": ["npm"],
+      "matchDepTypes": ["dependencies", "optionalDependencies"],
+      "rangeStrategy": "bump"
+    },
+    {
       "description": "Extend the npm security preset cooldown from three days to seven",
       "matchDatasources": ["npm"],
       "matchUpdateTypes": ["major", "minor", "patch"],
@@ -35,6 +41,12 @@
       "matchUpdateTypes": ["minor", "patch", "pin"],
       "matchCurrentVersion": "!/^0\\./",
       "automerge": true
+    },
+    {
+      "description": "Pin updates lack release timestamps, and npm enforces the cooldown during lockfile resolution",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["pin"],
+      "minimumReleaseAgeBehaviour": "timestamp-optional"
     }
   ],
   "customManagers": [
