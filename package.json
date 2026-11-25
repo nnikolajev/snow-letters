@@ -1,0 +1,33 @@
+{
+  "name": "snow-letters",
+  "version": "1.0.0",
+  "description": "Draws snow on top of text that follows the real outline of each letter.",
+  "keywords": [
+    "snow",
+    "text",
+    "letters",
+    "canvas",
+    "christmas",
+    "winter"
+  ],
+  "type": "module",
+  "main": "./dist/snowLetters.js",
+  "types": "./dist/snowLetters.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/snowLetters.d.ts",
+      "import": "./dist/snowLetters.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "sideEffects": false,
+  "scripts": {
+    "build": "tsc -p tsconfig.json",
+    "prepublishOnly": "npm run build"
+  },
+  "devDependencies": {
+    "typescript": "^5.9.0"
+  }
+}
