@@ -132,6 +132,60 @@ test("refreshes for text, custom thickness, resize, and font loads", async ({ pa
   await expect.poll(() => page.evaluate(() => window.draws)).toBeGreaterThan(beforeFontLoad);
 });
 
+test("deep snow does not leave tall streaks on narrow ledges", async ({ page }) => {
+  await fixture(page);
+  const heading = page.locator("h1");
+  await heading.evaluate((element) => {
+    element.textContent = "aW gny";
+    element.style.font = "bold 68px Georgia, 'Times New Roman', serif";
+    element.style.setProperty("--snow-thickness", "0.5");
+    window.startSnowLetters();
+  });
+
+  const canvas = heading.locator(overlay);
+  await expect(canvas).toHaveCount(1);
+  expect(await alphaCount(canvas)).toBeGreaterThan(100);
+  const tallSliver = await canvas.evaluate((element) => {
+    const { width, height } = element;
+    const { data } = element.getContext("2d").getImageData(0, 0, width, height);
+    const visited = new Uint8Array(width * height);
+    const scale = window.devicePixelRatio;
+
+    // Measure connected solid snow pixels separately from the soft shadow.
+    for (let start = 0; start < visited.length; start++) {
+      if (visited[start] || data[start * 4 + 3] < 160) continue;
+      visited[start] = 1;
+      const pending = [start];
+      let left = width;
+      let right = 0;
+      let top = height;
+      let bottom = 0;
+      for (const pixel of pending) {
+        const x = pixel % width;
+        const y = Math.floor(pixel / width);
+        left = Math.min(left, x);
+        right = Math.max(right, x);
+        top = Math.min(top, y);
+        bottom = Math.max(bottom, y);
+        for (const neighbor of [
+          x > 0 ? pixel - 1 : -1,
+          x < width - 1 ? pixel + 1 : -1,
+          pixel - width,
+          pixel + width,
+        ]) {
+          if (data[neighbor * 4 + 3] >= 160 && !visited[neighbor]) {
+            visited[neighbor] = 1;
+            pending.push(neighbor);
+          }
+        }
+      }
+      if (right - left + 1 <= 5 * scale && bottom - top + 1 >= 12 * scale) return true;
+    }
+    return false;
+  });
+  expect(tallSliver).toBe(false);
+});
+
 test("tracks selector changes and cleans up independent and overlapping subscriptions", async ({
   page,
 }) => {

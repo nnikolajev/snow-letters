@@ -143,25 +143,9 @@ function drawSnow(el: HTMLElement, canvas: HTMLCanvasElement): void {
     depth[i] = thickness * (0.12 + 0.88 * flatness) * lump;
   }
 
-  // Smooth the snow surface so it looks soft instead of pixel-stepped.
-  const surface: number[] = Array.from({ length: n }, () => NaN);
+  const surface: number[] = [];
   const radius = Math.max(1, Math.round(scale * 1.5));
-  const maxDrop = Math.max(2, thickness * 0.45);
-  for (let i = 0; i < n; i++) {
-    if (Number.isNaN(tops[i])) continue;
-    let sum = 0;
-    let count = 0;
-    for (let k = -radius; k <= radius; k++) {
-      const j = i + k;
-      if (j < 0 || j >= n || Number.isNaN(tops[j]) || Math.abs(tops[j] - tops[i]) > maxDrop)
-        continue;
-      sum += tops[j] - depth[j];
-      count++;
-    }
-    surface[i] = sum / count;
-  }
-
-  const overlap = thickness * 0.35; // snow dips slightly into the letter
+  const maxDrop = Math.max(2, Math.min(thickness * 0.45, fontSize * 0.1));
   ctx.scale(scale, scale);
   ctx.fillStyle = "#ffffff";
   ctx.shadowColor = "rgba(40, 70, 120, 0.45)";
@@ -176,15 +160,46 @@ function drawSnow(el: HTMLElement, canvas: HTMLCanvasElement): void {
       continue;
     }
     const start = i++;
-    while (i < n && Math.abs(tops[i] - tops[i - 1]) <= maxDrop) i++;
+    let highest = tops[start];
+    let lowest = highest;
+    while (i < n && Math.abs(tops[i] - tops[i - 1]) <= maxDrop) {
+      highest = Math.min(highest, tops[i]);
+      lowest = Math.max(lowest, tops[i]);
+      i++;
+    }
     const end = i - 1;
+    const columns = i - start;
+    const ledgeWidth = columns * step;
+    const depthLimit = (ledgeWidth * ledgeWidth) / (fontSize * 0.18);
+    const narrow = depthLimit < thickness;
+    if (ledgeWidth < 2 || (narrow && lowest - highest > ledgeWidth)) continue;
+
+    // A short ledge can hold a small rounded cap. It cannot support a tall streak.
+    const overlap = Math.min(thickness * 0.35, ledgeWidth * 0.18);
+    for (let j = start; j <= end; j++) {
+      const centerWeight = narrow ? Math.sin((Math.PI * (j - start + 0.5)) / columns) : 1;
+      depth[j] = Math.min(depth[j], depthLimit) * centerWeight;
+    }
+
+    // Smooth each pile without pulling snow in from a neighboring ledge.
+    for (let j = start; j <= end; j++) {
+      let sum = 0;
+      let count = 0;
+      for (let k = Math.max(start, j - radius); k <= Math.min(end, j + radius); k++) {
+        if (Math.abs(tops[k] - tops[j]) > maxDrop) continue;
+        sum += tops[k] - depth[k];
+        count++;
+      }
+      surface[j] = Math.min(tops[j], Math.max(tops[j] - depthLimit, sum / count));
+    }
 
     ctx.beginPath();
-    ctx.moveTo(start * step, tops[start] + overlap * 0.3);
+    ctx.moveTo(start * step, tops[start] + Math.min(overlap, depth[start] * 0.5) * 0.3);
     for (let j = start; j <= end; j++) ctx.lineTo(j * step, surface[j]);
-    ctx.lineTo(end * step, tops[end] + overlap * 0.3);
+    ctx.lineTo(end * step, tops[end] + Math.min(overlap, depth[end] * 0.5) * 0.3);
     for (let j = end; j >= start; j--) {
-      ctx.lineTo(j * step, Math.min(tops[j] + overlap, surface[j] + depth[j] + overlap));
+      const dip = Math.min(overlap, depth[j] * 0.5);
+      ctx.lineTo(j * step, Math.min(tops[j], surface[j] + depth[j]) + dip);
     }
     ctx.closePath();
     ctx.fill();
