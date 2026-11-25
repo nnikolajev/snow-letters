@@ -1,0 +1,52 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": ["config:best-practices"],
+  "enabledManagers": ["npm", "github-actions", "custom.regex"],
+  "labels": ["dependencies"],
+  "prConcurrentLimit": 3,
+  "automergeStrategy": "squash",
+  "rebaseWhen": "behind-base-branch",
+  "constraints": {
+    "npm": "^11.10.0"
+  },
+  "npm": {
+    "minimumReleaseAge": "7 days",
+    "internalChecksFilter": "strict"
+  },
+  "minimumReleaseAgePackageManagerSync": true,
+  "vulnerabilityAlerts": {
+    "enabled": true,
+    "automerge": false,
+    "addLabels": ["security"]
+  },
+  "lockFileMaintenance": {
+    "automerge": true
+  },
+  "packageRules": [
+    {
+      "description": "Extend the npm security preset cooldown from three days to seven",
+      "matchDatasources": ["npm"],
+      "matchUpdateTypes": ["major", "minor", "patch"],
+      "minimumReleaseAge": "7 days"
+    },
+    {
+      "description": "Automerge routine npm updates after required checks pass",
+      "matchManagers": ["npm"],
+      "matchUpdateTypes": ["minor", "patch", "pin"],
+      "matchCurrentVersion": "!/^0\\./",
+      "automerge": true
+    }
+  ],
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track the pinned Renovate runner image",
+      "managerFilePatterns": [".github/workflows/renovate.yml"],
+      "matchStrings": [
+        "renovate-image: (?<depName>ghcr\\.io/renovatebot/renovate):(?<currentValue>\\d+\\.\\d+\\.\\d+)@(?<currentDigest>sha256:[a-f0-9]{64})"
+      ],
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    }
+  ]
+}
