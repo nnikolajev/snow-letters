@@ -23,6 +23,7 @@ jobs:
           node-version: '24'
           package-manager-cache: false
       - run: npm ci
+      - run: npm run lint
       - run: npx playwright install --with-deps chromium firefox webkit
       - run: npm test
       - run: npm run test:package

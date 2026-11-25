@@ -42,9 +42,12 @@
     "preview": "node scripts/preview.mjs",
     "test": "npm run build:site && playwright test",
     "test:package": "node scripts/check-package.mjs",
-    "prepack": "npm run build"
+    "prepack": "npm run build",
+    "lint": "biome ci . --error-on-warnings",
+    "format": "biome check . --write"
   },
   "devDependencies": {
+    "@biomejs/biome": "2.6.9",
     "@playwright/test": "1.65.1",
     "typescript": "^5.9.0"
   }
