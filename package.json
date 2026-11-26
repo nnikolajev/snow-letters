@@ -1,6 +1,6 @@
 {
   "name": "snow-letters",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "description": "Draws snow on top of text that follows the real outline of each letter.",
   "license": "MIT",
   "homepage": "https://nnikolajev.github.io/snow-letters/",
